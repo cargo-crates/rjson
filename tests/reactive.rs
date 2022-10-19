@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod reactive {
-  use rjson::RJson;
+  use rj::RJson;
   use std::sync::{Arc, Mutex};
   #[test]
   fn main_test() {
-    let state = rjson::reactive(serde_json::json!({
+    let state = rj::reactive(serde_json::json!({
         "name": "John Doe",
         "age": 43,
         "phones": [
@@ -19,22 +19,22 @@ mod reactive {
     let _eff = {
       let effect_run_times = effect_run_times.clone();
       let state = state.clone();
-      rjson::effect(move || {
-          let state = state.lock().unwrap();
+      rj::effect(move || {
+        state.lock(|state| {
           println!("-- hello effect, age: {}", state.pget("age"));
           *effect_run_times.lock().unwrap() += 1;
+        })
       })
     };
     assert_eq!(*effect_run_times.lock().unwrap(), 1);
 
-    {
-      let mut state = state.lock().unwrap();
+    state.lock_mut(|state| {
       state.pset("name", "zhangsan".into());
       state.pset("age", 18.into());
       state.pset("age", 19.into());
       state.pset("age2", serde_json::json!(null));
       state.pset("phones.1", "0539".into());
-    }
+    });
     std::thread::sleep(std::time::Duration::from_secs(1));
     assert_eq!(*effect_run_times.lock().unwrap(), 2);
   }
