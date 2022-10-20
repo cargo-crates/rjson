@@ -20,17 +20,33 @@ lazy_static::lazy_static! {
             thread: Some(std::thread::spawn(move || {
                 // 延迟1s执行effect.run方法
                 let delay = std::time::Duration::from_millis(1);
-                let effect_run_debouncer = debounce::EventDebouncer::new(delay, move |effect: Arc<Effect>| {
-                    effect.run();
-                });
+                // let effect_run_debouncer = debounce::EventDebouncer::new(delay, move |effect: Arc<Effect>| {
+                //     effect.run();
+                // });
+                let effect_stacks = Arc::new(Mutex::new(vec![]));
+                let debounce_fn = fns::debounce(|effect_stacks: Arc<Mutex<Vec<Arc<Effect>>>>| {
+                    let mut effect_stacks = effect_stacks.lock().unwrap();
+                    for effect in effect_stacks.iter_mut() {
+                        effect.run();
+                    }
+                    (*effect_stacks).clear();
+                }, delay);
+
                 loop {
                     let message = receiver.recv();
                     match message {
                         Ok(effect) => {
-                            effect_run_debouncer.put(effect);
+                            // effect_run_debouncer.put(effect);
+                            {
+                                let mut effect_stacks = effect_stacks.lock().unwrap();
+                                if !effect_stacks.contains(&effect) {
+                                    effect_stacks.push(effect);
+                                }
+                            }
+                            debounce_fn.call(effect_stacks.clone());
                         }
                         Err(_) => {
-                            println!("shutting down.");
+                            // println!("shutting down.");
                             break;
                         }
                     }
@@ -153,7 +169,7 @@ impl std::cmp::PartialEq for Effect {
 impl std::cmp::Eq for Effect {}
 impl Drop for Effect {
     fn drop(&mut self) {
-        log::debug!("drop effect {:?}", self.get_ptr());
+        log::trace!("drop effect {:?}", self.get_ptr());
         self.cleanup();
     }
 }

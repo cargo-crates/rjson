@@ -157,7 +157,6 @@ impl<'a> Reactive<'a> {
     cb(json.to_mut());
   }
 }
-
 impl<'a> Drop for Reactive<'a> {
   fn drop(&mut self) {
     // {
@@ -167,7 +166,7 @@ impl<'a> Drop for Reactive<'a> {
     self.lock(|state| {
       drop_json_addr(&*state);
     });
-    log::debug!("drop reactive {:?}", format!("{:p}", self));
+    log::trace!("drop reactive {:?}", format!("{:p}", self));
     // {
     //   let json_addr_map = JSON_ADDR_MAP.lock().unwrap();
     //   println!("=========== {:#?}", json_addr_map);

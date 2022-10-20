@@ -6,7 +6,7 @@
 [Latest Version]: https://img.shields.io/crates/v/rj.svg
 [crates.io]: https://crates.io/crates/rj
 ```toml
-rjson = { version: "0", package = "rj" }
+rjson = { version = "0", package = "rj" }
 ```
 
 ```rust
